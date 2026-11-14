@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Voice Konsole</title>
+    <style>
+        body { background: #000; color: #0f0; font-family: monospace; padding: 20px; text-align: center; }
+        #transcript { font-size: 22px; min-height: 150px; margin-top: 50px; border: 1px solid #0f0; padding: 15px; }
+        #status { margin-top: 20px; font-size: 14px; color: #888; }
+    </style>
+</head>
+<body>
+    <div id="transcript">Warte auf Sprache...</div>
+    <div id="status">Mikrofon aktiv. 7 Sekunden Stille = Befehl ausführen.</div>
+
+    <script>
+        const transcriptDiv = document.getElementById('transcript');
+        const statusDiv = document.getElementById('status');
+
+        // Web Speech API initialisieren
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        
+        // Zwingt die API weiterzuhören, auch bei Pausen
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'de-DE';
+
+        let finalTranscript = '';
+        let silenceTimer = null;
+        const SILENCE_TIMEOUT = 7000; // 7000 Millisekunden (7 Sekunden) Luftholen
+
+        recognition.onresult = (event) => {
+            // Bei jedem gesprochenen Wort wird der Timer genullt
+            clearTimeout(silenceTimer);
+            
+            let interimTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript + ' ';
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+            }
+            
+            transcriptDiv.innerText = finalTranscript + interimTranscript;
+
+            // Timer startet neu. Wenn 7 Sekunden nichts kommt -> executeCommand
+            silenceTimer = setTimeout(() => {
+                executeCommand(finalTranscript.trim());
+            }, SILENCE_TIMEOUT);
+        };
+
+        // Android Chrome stoppt continuous-Aufnahmen manchmal aus Sicherheitsgründen.
+        // Dieser Event-Listener zwingt das Mikrofon sofort wieder an.
+        recognition.onend = () => {
+            if (finalTranscript !== '') return; // Stoppt nur, wenn wir gerade ausführen
+            recognition.start();
+        };
+
+        function executeCommand(text) {
+            if(!text) return;
+            statusDiv.innerText = "Verarbeite: " + text;
+            recognition.stop(); // Mikrofon aus während Verarbeitung
+            
+            // --- HIER FOLGT DIE API VERARBEITUNG ---
+            // fetch('API_ENDPOINT', { ... })
+            
+            // Temporärer Chat-Reset
+            setTimeout(() => {
+                finalTranscript = '';
+                transcriptDiv.innerText = 'Warte auf Sprache...';
+                statusDiv.innerText = 'Mikrofon aktiv.';
+                recognition.start();
+            }, 4000);
+        }
+
+        // Autostart
+        window.onload = () => { recognition.start(); };
+    </script>
+</body>
+</html>
