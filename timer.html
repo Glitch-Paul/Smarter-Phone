@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <style>
-    /* Importiert die digitale Alarm-Uhr-Schriftart */
-    @import url('https://fonts.cdnfonts.com/css/digital-7');
+    /* Importiert die exakte 7-Segment-Schrift (DSEG7 Classic) passend zum Screenshot */
+    @import url('https://cdn.jsdelivr.net/npm/dseg@0.46.0/css/dseg.css');
 
     body {
       background-color: #191919; /* Notion Dark Mode */
@@ -22,20 +22,19 @@
     .bg-ring { fill: none; stroke: #333; stroke-width: 5; }
     
     .progress-ring {
-      fill: none; 
-      stroke: #F5A623; /* Exaktes Amber-Orange des Indify-Pfeils */
+      fill: none; stroke: #F5A623; /* Amber-Orange */
       stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset 1s linear;
     }
     
     .center-display {
-      position: relative; z-index: 10; display: flex; flex-direction: row; /* Ordnet - Zahl + nebeneinander an */
+      position: relative; z-index: 10; display: flex; flex-direction: row; 
       align-items: center; justify-content: center;
     }
     
     .time-text { 
-      font-family: 'Digital-7', monospace; /* Alarm-Uhr-Schrift */
-      font-size: 65px; margin: 0 10px; color: #fff; letter-spacing: 2px; 
-      display: flex; align-items: baseline;
+      font-family: 'DSEG7 Classic', monospace; /* Die exakte 7-Segment-Schrift */
+      font-size: 60px; margin: 0 15px; color: #fff; 
+      line-height: 1; margin-top: 5px; 
     }
     
     .adjust-btn {
@@ -46,9 +45,9 @@
     .adjust-btn:disabled { color: #222; cursor: default; }
 
     .controls {
-      margin-top: 10px; /* Sehr nah unter dem Kreis */
+      margin-top: 10px; 
       display: flex; justify-content: center; align-items: center;
-      position: relative; width: 220px; /* Sperrt die Breite für perfekte Zentrierung */
+      position: relative; width: 220px; 
     }
     
     .start-btn {
@@ -60,7 +59,7 @@
     .start-btn:active { opacity: 0.8; }
     
     .reset-btn {
-      position: absolute; right: 10px; /* Reset-Icon rechts, stört die Zentrierung von Start nicht */
+      position: absolute; right: 10px; 
       background: none; border: none; color: #666; font-size: 20px; cursor: pointer; padding: 5px;
     }
     .reset-btn:hover { color: #aaa; }
@@ -110,8 +109,8 @@
     }
 
     function updateDisplay() {
-      // Fügt die reinen Minuten in der Digital-Schrift ein und ein kleines 'm' in normaler Schrift
-      timeText.innerHTML = Math.ceil(timeLeft / 60) + '<span style="font-size:24px; font-family:sans-serif; margin-left:4px;">m</span>';
+      // Nur noch die blanke Zahl wird angezeigt (kein "m")
+      timeText.innerText = Math.ceil(timeLeft / 60);
       ring.style.strokeDashoffset = circ - (timeLeft / totalSecs) * circ;
     }
 
