@@ -3,12 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <style>
+    /* Importiert die digitale Alarm-Uhr-Schriftart */
+    @import url('https://fonts.cdnfonts.com/css/digital-7');
+
     body {
       background-color: #191919; /* Notion Dark Mode */
       display: flex; flex-direction: column; justify-content: center; align-items: center;
       height: 100vh; margin: 0; color: #fff;
-      font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif; /* Serif Schriftart */
-      user-select: none;
+      font-family: sans-serif; user-select: none;
     }
     
     .timer-container {
@@ -17,39 +19,49 @@
     }
     
     svg { position: absolute; top: 0; left: 0; transform: rotate(-90deg); width: 100%; height: 100%; }
-    .bg-ring { fill: none; stroke: #333; stroke-width: 4; }
+    .bg-ring { fill: none; stroke: #333; stroke-width: 5; }
+    
     .progress-ring {
-      fill: none; stroke: #F0D71A; /* Dezent gelb/orange wie beim Indify-Indikator */
-      stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 1s linear;
+      fill: none; 
+      stroke: #F5A623; /* Exaktes Amber-Orange des Indify-Pfeils */
+      stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset 1s linear;
     }
     
     .center-display {
-      position: relative; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      position: relative; z-index: 10; display: flex; flex-direction: row; /* Ordnet - Zahl + nebeneinander an */
+      align-items: center; justify-content: center;
     }
     
-    .time-text { font-size: 42px; font-weight: normal; margin: 5px 0; color: #fff; letter-spacing: 1px; }
+    .time-text { 
+      font-family: 'Digital-7', monospace; /* Alarm-Uhr-Schrift */
+      font-size: 65px; margin: 0 10px; color: #fff; letter-spacing: 2px; 
+      display: flex; align-items: baseline;
+    }
     
     .adjust-btn {
-      background: none; border: none; color: #888; font-size: 28px; cursor: pointer;
-      padding: 0 20px; transition: color 0.2s; font-family: sans-serif;
+      background: none; border: none; color: #888; font-size: 35px; cursor: pointer;
+      padding: 0 5px; transition: color 0.2s; font-family: sans-serif; font-weight: 300;
     }
     .adjust-btn:hover:not(:disabled) { color: #fff; }
     .adjust-btn:disabled { color: #222; cursor: default; }
 
     .controls {
-      margin-top: 35px; display: flex; align-items: center; gap: 20px;
+      margin-top: 10px; /* Sehr nah unter dem Kreis */
+      display: flex; justify-content: center; align-items: center;
+      position: relative; width: 220px; /* Sperrt die Breite für perfekte Zentrierung */
     }
     
     .start-btn {
       background: #fff; color: #191919; border: none; border-radius: 25px;
-      padding: 12px 35px; font-size: 16px; font-weight: 600; cursor: pointer;
+      padding: 10px 35px; font-size: 16px; font-weight: 600; cursor: pointer;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      transition: opacity 0.2s;
+      transition: opacity 0.2s; z-index: 2;
     }
     .start-btn:active { opacity: 0.8; }
     
     .reset-btn {
-      background: none; border: none; color: #666; font-size: 22px; cursor: pointer; padding: 5px;
+      position: absolute; right: 10px; /* Reset-Icon rechts, stört die Zentrierung von Start nicht */
+      background: none; border: none; color: #666; font-size: 20px; cursor: pointer; padding: 5px;
     }
     .reset-btn:hover { color: #aaa; }
   </style>
@@ -62,9 +74,9 @@
       <circle class="progress-ring" cx="50" cy="50" r="46" id="ring"></circle>
     </svg>
     <div class="center-display">
-      <button class="adjust-btn" id="btn-plus" onclick="adjustTime(1)">+</button>
-      <div class="time-text" id="time">90m</div>
       <button class="adjust-btn" id="btn-minus" onclick="adjustTime(-1)">−</button>
+      <div class="time-text" id="time">90</div>
+      <button class="adjust-btn" id="btn-plus" onclick="adjustTime(1)">+</button>
     </div>
   </div>
 
@@ -74,7 +86,7 @@
   </div>
 
   <script>
-    let totalSecs = 90 * 60; // Startwert: 90 Minuten
+    let totalSecs = 90 * 60; 
     let timeLeft = totalSecs;
     let timerId = null;
 
@@ -91,22 +103,23 @@
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const osc = ctx.createOscillator(), gain = ctx.createGain();
       osc.connect(gain); gain.connect(ctx.destination);
-      osc.frequency.value = 600; // Tonhöhe
+      osc.frequency.value = 600; 
       gain.gain.setValueAtTime(1, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.5);
       osc.start(); osc.stop(ctx.currentTime + 1.5);
     }
 
     function updateDisplay() {
-      timeText.innerText = Math.ceil(timeLeft / 60) + 'm';
+      // Fügt die reinen Minuten in der Digital-Schrift ein und ein kleines 'm' in normaler Schrift
+      timeText.innerHTML = Math.ceil(timeLeft / 60) + '<span style="font-size:24px; font-family:sans-serif; margin-left:4px;">m</span>';
       ring.style.strokeDashoffset = circ - (timeLeft / totalSecs) * circ;
     }
 
     function adjustTime(minutes) {
-      if (timerId !== null) return; // Verhindert Änderungen während der Timer läuft
+      if (timerId !== null) return; 
       const newTotal = totalSecs + (minutes * 60);
       const newLeft = timeLeft + (minutes * 60);
-      if (newLeft > 0) { // Timer kann nicht ins Minus fallen
+      if (newLeft > 0) { 
         totalSecs = newTotal;
         timeLeft = newLeft;
         updateDisplay();
@@ -114,10 +127,7 @@
     }
 
     function resetTimer() {
-      if (timerId !== null) { 
-        clearInterval(timerId); 
-        timerId = null; 
-      }
+      if (timerId !== null) { clearInterval(timerId); timerId = null; }
       timeLeft = totalSecs;
       startBtn.innerText = 'Start';
       btnPlus.disabled = false;
@@ -127,27 +137,21 @@
 
     function toggleTimer() {
       if (timerId) {
-        clearInterval(timerId);
-        timerId = null;
+        clearInterval(timerId); timerId = null;
         startBtn.innerText = 'Resume';
-        btnPlus.disabled = false; // Buttons wieder aktivieren beim Pausieren
-        btnMinus.disabled = false;
+        btnPlus.disabled = false; btnMinus.disabled = false;
       } else {
         if (timeLeft <= 0) timeLeft = totalSecs;
         startBtn.innerText = 'Pause';
-        btnPlus.disabled = true; // Buttons ausgrauen während Timer läuft
-        btnMinus.disabled = true;
+        btnPlus.disabled = true; btnMinus.disabled = true;
         updateDisplay();
         
         timerId = setInterval(() => {
-          timeLeft--;
-          updateDisplay();
+          timeLeft--; updateDisplay();
           if (timeLeft <= 0) {
-            clearInterval(timerId);
-            timerId = null;
+            clearInterval(timerId); timerId = null;
             startBtn.innerText = 'Start';
-            btnPlus.disabled = false;
-            btnMinus.disabled = false;
+            btnPlus.disabled = false; btnMinus.disabled = false;
             playAlarm();
           }
         }, 1000);
