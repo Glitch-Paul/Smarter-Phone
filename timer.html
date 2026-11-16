@@ -3,11 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <style>
-    /* Importiert die exakte 7-Segment-Schrift (DSEG7 Classic) passend zum Screenshot */
     @import url('https://cdn.jsdelivr.net/npm/dseg@0.46.0/css/dseg.css');
 
     body {
-      background-color: #191919; /* Notion Dark Mode */
+      background-color: #191919;
       display: flex; flex-direction: column; justify-content: center; align-items: center;
       height: 100vh; margin: 0; color: #fff;
       font-family: sans-serif; user-select: none;
@@ -22,7 +21,7 @@
     .bg-ring { fill: none; stroke: #333; stroke-width: 5; }
     
     .progress-ring {
-      fill: none; stroke: #F5A623; /* Amber-Orange */
+      fill: none; stroke: #F5A623;
       stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset 1s linear;
     }
     
@@ -32,14 +31,15 @@
     }
     
     .time-text { 
-      font-family: 'DSEG7 Classic', monospace; /* Die exakte 7-Segment-Schrift */
-      font-size: 60px; margin: 0 15px; color: #fff; 
-      line-height: 1; margin-top: 5px; 
+      font-family: 'DSEG7 Classic', monospace;
+      font-size: 56px; margin: 0 12px; color: #fff; 
+      line-height: 1; margin-top: 4px;
     }
     
     .adjust-btn {
       background: none; border: none; color: #888; font-size: 35px; cursor: pointer;
-      padding: 0 5px; transition: color 0.2s; font-family: sans-serif; font-weight: 300;
+      padding: 10px 6px; transition: color 0.2s; font-family: sans-serif; font-weight: 300;
+      touch-action: manipulation;
     }
     .adjust-btn:hover:not(:disabled) { color: #fff; }
     .adjust-btn:disabled { color: #222; cursor: default; }
@@ -73,9 +73,9 @@
       <circle class="progress-ring" cx="50" cy="50" r="46" id="ring"></circle>
     </svg>
     <div class="center-display">
-      <button class="adjust-btn" id="btn-minus" onclick="adjustTime(-1)">−</button>
+      <button class="adjust-btn" id="btn-minus">−</button>
       <div class="time-text" id="time">90</div>
-      <button class="adjust-btn" id="btn-plus" onclick="adjustTime(1)">+</button>
+      <button class="adjust-btn" id="btn-plus">+</button>
     </div>
   </div>
 
@@ -88,6 +88,8 @@
     let totalSecs = 90 * 60; 
     let timeLeft = totalSecs;
     let timerId = null;
+    let holdTimeout = null;
+    let holdInterval = null;
 
     const timeText = document.getElementById('time');
     const startBtn = document.getElementById('start-btn');
@@ -109,7 +111,6 @@
     }
 
     function updateDisplay() {
-      // Nur noch die blanke Zahl wird angezeigt (kein "m")
       timeText.innerText = Math.ceil(timeLeft / 60);
       ring.style.strokeDashoffset = circ - (timeLeft / totalSecs) * circ;
     }
@@ -125,7 +126,38 @@
       }
     }
 
+    // Hold-to-Repeat Logik für schnelles Verstellen
+    function startHold(btn, delta) {
+      if (btn.disabled) return;
+      adjustTime(delta); // Sofortiger 1-Minuten-Schritt beim Klick
+      holdTimeout = setTimeout(() => {
+        holdInterval = setInterval(() => {
+          adjustTime(delta);
+        }, 60); // Alle 60ms ein weiterer Schritt beim Gedrückthalten
+      }, 300); // Kurze Verzögerung (300ms), damit Einzelklicks präzise bleiben
+    }
+
+    function stopHold() {
+      clearTimeout(holdTimeout);
+      clearInterval(holdInterval);
+      holdTimeout = null;
+      holdInterval = null;
+    }
+
+    function bindHoldButton(btn, delta) {
+      btn.addEventListener('mousedown', (e) => { e.preventDefault(); startHold(btn, delta); });
+      btn.addEventListener('touchstart', (e) => { e.preventDefault(); startHold(btn, delta); }, { passive: false });
+      btn.addEventListener('mouseup', stopHold);
+      btn.addEventListener('mouseleave', stopHold);
+      btn.addEventListener('touchend', stopHold);
+      btn.addEventListener('touchcancel', stopHold);
+    }
+
+    bindHoldButton(btnMinus, -1);
+    bindHoldButton(btnPlus, 1);
+
     function resetTimer() {
+      stopHold();
       if (timerId !== null) { clearInterval(timerId); timerId = null; }
       timeLeft = totalSecs;
       startBtn.innerText = 'Start';
@@ -135,6 +167,7 @@
     }
 
     function toggleTimer() {
+      stopHold();
       if (timerId) {
         clearInterval(timerId); timerId = null;
         startBtn.innerText = 'Resume';
